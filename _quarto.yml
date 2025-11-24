@@ -1,0 +1,20 @@
+project:
+  type: website
+
+website:
+  title: "Meu Blog de Python"
+  navbar:
+    right:
+      - href: index.qmd
+        text: Home
+      - href: atividade1.qmd
+        text: Atividade 1
+      - href: atividade2.qmd
+        text: Atividade 2
+      - href: atividade3.qmd
+        text: Atividade 3
+
+format:
+  html:
+    theme: cosmo
+    toc: true

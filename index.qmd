@@ -1,0 +1,44 @@
+---
+title: "Bem-vindo ao meu Blog de Python"
+format:
+  html:
+    toc: false
+    page-layout: full
+    theme: litera
+---
+
+<div style="text-align:center; padding: 30px 0;">
+
+# 👋 Bem-vindo ao meu Blog de Python  
+
+<p style="font-size: 1.2rem; color:#555; max-width:700px; margin:auto;">
+Aqui você encontrará minhas atividades, estudos e experimentos em <strong>Python</strong>, tudo organizado e apresentado com <strong>Quarto</strong>.
+</p>
+
+<br>
+
+<a href="atividade1.html" class="btn btn-primary btn-lg" style="margin:5px;">Atividade 1</a>
+<a href="atividade2.html" class="btn btn-primary btn-lg" style="margin:5px;">Atividade 2</a>
+<a href="atividade3.html" class="btn btn-primary btn-lg" style="margin:5px;">Atividade 3</a>
+
+<br><br>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg"
+     width="120" style="opacity:0.85;">
+
+</div>
+
+---
+
+## 📘 O que você vai encontrar aqui
+
+- Exemplos práticos em Python  
+- Atividades da disciplina  
+- Visualizações, gráficos e código comentado  
+- Conteúdos organizados em páginas simples e objetivas  
+
+---
+
+## 🚀 Comece explorando!
+
+Use o menu superior ou clique nos botões acima para navegar pelas atividades.

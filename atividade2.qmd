@@ -1,0 +1,85 @@
+```{python}
+import os
+import requests
+from dotenv import load_dotenv
+from IPython.display import HTML, display
+import folium
+import math
+
+load_dotenv()
+token = os.getenv("SPTRANS_TOKEN")
+
+s = requests.Session()
+
+demo_paradas = [
+    {"cp": 7014417, "np": "ANGELICA B/C", "ed": "AV ANGELICA", "py": -23.534564, "px": -46.654302},
+    {"cp": 60016784, "np": "PARADA PALMEIRAS B/C", "ed": "R PADRE ANTONIO TOMAS", "py": -23.525799, "px": -46.679251},
+    {"cp": 60016786, "np": "ANTARTICA B/C", "ed": "PC SOUSA ARANHA", "py": -23.526523, "px": -46.673588},
+    {"cp": 12783, "np": "PARADA D", "ed": "R EXEMPLO", "py": -23.535317, "px": -46.653005},
+]
+
+demo_pos = [
+    {"p": "12783", "ta": "2024-09-27T01:05:47Z", "py": -23.53531725, "px": -46.653005},
+    {"p": "12534", "ta": "2024-09-27T01:06:10Z", "py": -23.547649, "px": -46.6410115},
+]
+
+def fetch_paradas_pos(codigo_linha=2506):
+    """Tenta buscar paradas e posições da API; retorna (paradas, pos_list).
+    Em caso de erro ou token ausente, retorna dados de demonstração."""
+    if not token:
+        print("SPTRANS_TOKEN não encontrado — usando dados de demonstração.")
+        return demo_paradas, demo_pos
+
+    try:
+        auth = s.post(f"https://api.olhovivo.sptrans.com.br/v2.1/Login/Autenticar?token={token}", timeout=10)
+        print("Login response:", auth.text)
+
+        r_par = s.get(f"https://api.olhovivo.sptrans.com.br/v2.1/Parada/BuscarParadasPorLinha?codigoLinha={codigo_linha}", timeout=10)
+        paradas = r_par.json()
+
+        r_pos = s.get(f"https://api.olhovivo.sptrans.com.br/v2.1/Posicao/Linha?codigoLinha={codigo_linha}", timeout=10)
+        pos_json = r_pos.json()
+        pos_list = pos_json.get("vs") if isinstance(pos_json, dict) else []
+
+        if not paradas:
+            print("API retornou 0 paradas — usando dados de demonstração.")
+            return demo_paradas, demo_pos
+
+        return paradas, pos_list
+
+    except Exception as e:
+        print("Erro ao acessar API Olho Vivo:", e)
+
+        return demo_paradas, demo_pos
+
+
+paradas, pos_list = fetch_paradas_pos(codigo_linha=2506)
+
+print(f"Usando {len(paradas)} paradas e {len(pos_list)} posições (veículos).")
+
+def mean_center(points):
+    lat = [p["py"] for p in points]
+    lon = [p["px"] for p in points]
+    return (sum(lat) / len(lat), sum(lon) / len(lon))
+
+center = mean_center(paradas) if paradas else (-23.534564, -46.654302)
+
+m = folium.Map(location=center, zoom_start=14)
+
+for p in paradas:
+    folium.Marker(location=[p["py"], p["px"]], popup=f"{p.get('np')}\n{p.get('ed','')}").add_to(m)
+
+for v in pos_list:
+    try:
+        folium.CircleMarker(location=[v["py"], v["px"]], radius=6, color="red", fill=True, fill_opacity=0.8,
+                            popup=f"Veículo: {v.get('p')}\nHora: {v.get('ta')}").add_to(m)
+    except Exception:
+        pass
+
+output = f"paradas_linha_2506.html"
+m.save(output)
+print(f"Mapa salvo em: {output}")
+
+display(HTML(m._repr_html_()))
+
+```

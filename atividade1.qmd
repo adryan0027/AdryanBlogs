@@ -1,0 +1,65 @@
+﻿```{python}
+import pandas as pd
+import requests
+import calendar
+from datetime import datetime
+import plotly.express as px
+
+def cotacao_dolar_periodo(mmyyyy: str):
+    """
+    Recebe uma string no formato 'MMYYYY' e retorna
+    um gráfico de linha com as cotações diárias do dólar PTAX.
+    """
+
+    first_date = datetime.strptime(mmyyyy, "%m%Y")
+    last_date = first_date.replace(
+        day = calendar.monthrange(first_date.year, first_date.month)[1]
+    )
+
+    data_ini = first_date.strftime("%m-%d-%Y")
+    data_fim = last_date.strftime("%m-%d-%Y")
+
+    url = (
+        "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
+        "CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)"
+        f"?@dataInicial='{data_ini}'&@dataFinalCotacao='{data_fim}'"
+        "&$top=100&$format=json"
+    )
+
+    # 3  Requisição
+    response = requests.get(url)
+    dados = response.json()["value"]
+
+    df = pd.DataFrame(dados)
+    df["data"] = pd.to_datetime(df["dataHoraCotacao"]).dt.date
+    df = df[["data", "cotacaoCompra", "cotacaoVenda"]]
+
+    # 5  Remover duplicados e ordenar
+    df = df.groupby("data").mean().reset_index()
+    df = df.sort_values("data")
+
+    # 6  Preencher feriados e finais de semana (forward-fill)
+    idx = pd.date_range(start=first_date, end=last_date)
+    df = df.set_index("data").reindex(idx)
+    df = df.fillna(method="ffill")
+    df.index.name = "data"
+    df = df.reset_index()
+
+    # 7  Plotly
+    fig = px.line(
+        df,
+        x="data",
+        y="cotacaoVenda",
+        title=f"Cotação do Dólar  {mmyyyy[:2]}/{mmyyyy[2:]}",
+        labels={"cotacaoVenda": "Cotação (Venda)", "data": "Data"}
+    )
+
+    fig.update_layout(yaxis_tickformat=".2f")
+    return fig
+
+# Executando para sua data 01/2010
+cotacao_dolar_periodo("012010")
+
+```
+
+```

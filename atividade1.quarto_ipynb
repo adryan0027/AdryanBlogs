@@ -1,0 +1,105 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "﻿---\n",
+        "title: \"Atividade 1 – Cotação do Dólar por Período\"\n",
+        "format: html\n",
+        "---"
+      ],
+      "id": "82353961"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import pandas as pd\n",
+        "import requests\n",
+        "import calendar\n",
+        "from datetime import datetime\n",
+        "import plotly.express as px\n",
+        "\n",
+        "def cotacao_dolar_periodo(mmyyyy: str):\n",
+        "    \"\"\"\n",
+        "    Recebe uma string no formato 'MMYYYY' e retorna\n",
+        "    um gráfico de linha com as cotações diárias do dólar PTAX.\n",
+        "    \"\"\"\n",
+        "\n",
+        "    first_date = datetime.strptime(mmyyyy, \"%m%Y\")\n",
+        "    last_date = first_date.replace(\n",
+        "        day = calendar.monthrange(first_date.year, first_date.month)[1]\n",
+        "    )\n",
+        "\n",
+        "    # Converter para formato exigido pela API: mm-dd-yyyy\n",
+        "    data_ini = first_date.strftime(\"%m-%d-%Y\")\n",
+        "    data_fim = last_date.strftime(\"%m-%d-%Y\")\n",
+        "\n",
+        "    # 2  Montar URL da API PTAX  Cotação por Período\n",
+        "    url = (\n",
+        "        \"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/\"\n",
+        "        \"CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)\"\n",
+        "        f\"?@dataInicial='{data_ini}'&@dataFinalCotacao='{data_fim}'\"\n",
+        "        \"&$top=100&$format=json\"\n",
+        "    )\n",
+        "\n",
+        "    # 3  Requisição\n",
+        "    response = requests.get(url)\n",
+        "    dados = response.json()[\"value\"]\n",
+        "\n",
+        "    # 4  Criar DataFrame\n",
+        "    df = pd.DataFrame(dados)\n",
+        "    df[\"data\"] = pd.to_datetime(df[\"dataHoraCotacao\"]).dt.date\n",
+        "    df = df[[\"data\", \"cotacaoCompra\", \"cotacaoVenda\"]]\n",
+        "\n",
+        "    # 5  Remover duplicados e ordenar\n",
+        "    df = df.groupby(\"data\").mean().reset_index()\n",
+        "    df = df.sort_values(\"data\")\n",
+        "\n",
+        "    # 6  Preencher feriados e finais de semana (forward-fill)\n",
+        "    idx = pd.date_range(start=first_date, end=last_date)\n",
+        "    df = df.set_index(\"data\").reindex(idx)\n",
+        "    df = df.fillna(method=\"ffill\")\n",
+        "    df.index.name = \"data\"\n",
+        "    df = df.reset_index()\n",
+        "\n",
+        "    # 7  Plotly\n",
+        "    fig = px.line(\n",
+        "        df,\n",
+        "        x=\"data\",\n",
+        "        y=\"cotacaoVenda\",\n",
+        "        title=f\"Cotação do Dólar  {mmyyyy[:2]}/{mmyyyy[2:]}\",\n",
+        "        labels={\"cotacaoVenda\": \"Cotação (Venda)\", \"data\": \"Data\"}\n",
+        "    )\n",
+        "\n",
+        "    fig.update_layout(yaxis_tickformat=\".2f\")\n",
+        "    return fig\n",
+        "\n",
+        "# Executando para sua data 01/2010\n",
+        "cotacao_dolar_periodo(\"012010\")"
+      ],
+      "id": "d880ae7f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "```"
+      ],
+      "id": "08dd1387"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "C:\\Users\\Adryan\\AppData\\Local\\Programs\\Python\\Python313\\share\\jupyter\\kernels\\python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
